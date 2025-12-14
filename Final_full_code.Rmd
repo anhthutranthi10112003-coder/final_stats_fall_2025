@@ -1,0 +1,2760 @@
+---
+title: "Full analysis for all countries & East Asia region"
+output:
+  html_document:
+    toc: true
+    toc_depth: 2
+    toc_float: true
+    number_sections: false
+  pdf_document:
+    toc: true
+    toc_depth: '2'
+---
+# 1 INFERENCE FOR A NUMERICAL VARIABLE
+
+## China
+```{r, message=FALSE, warning=FALSE, results='hide'}
+# Load necessary library
+library(dplyr)
+
+
+# Read the CSV files
+world_data <- read.csv("world_data(in).csv")
+income_level <- read.csv("income_level(in).csv") %>%
+  rename(country = name)
+
+
+# Check column types
+str(world_data)
+str(income_level)
+
+# ----- PREPARE WORLD DATASET FOR TEST 1 ------
+
+
+China_test_1 <- income_level %>%
+  select(country, year, gini) %>%
+  filter(year >= 1990, year <= 2025) %>%
+  filter(!is.na(gini)) %>%
+  distinct()
+
+  
+sum(is.na(income_level$gini))
+sum(duplicated(China_test_1))
+  
+  # World mean each year
+China_test_1 <- China_test_1 %>% 
+  group_by(year) %>%
+  mutate(world_mean = mean(gini, na.rm = TRUE)) %>%
+  ungroup() %>%
+  
+  # Filter country
+  filter(country == "China") %>%
+  
+  # Compute difference between (China gini - mean world gini)
+  mutate(difference = gini - world_mean)
+
+```
+
+```{r, message=FALSE, warning=FALSE}
+
+library(ggplot2)
+
+ggplot(China_test_1, aes(x = year, y = difference)) +
+  geom_smooth(color = "blue", size = 1.1, se = FALSE, method = "loess") +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+  
+  labs(
+    title = "Annual Difference Between China's Gini Coefficient \r\n and the Global Average (1990–2025)",
+    x = "Year",
+    y = "Difference (China Gini – Global Average Gini)"
+  ) +
+  
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(size = 12, face = "bold", hjust = 0.5),
+    
+    axis.title.y = element_text(
+      size = 11,     
+      face = "bold", 
+      angle = 90,   
+      vjust = 0.5    
+    )
+  )
+
+```
+
+From 1990 to 2025, China’s Gini coefficient shows a pronounced transition relative to the global average. At the beginning of the period, China’s Gini coefficient is substantially below the global average, with the difference reaching approximately −7.5 in 1990. The gap then narrows rapidly throughout the 1990s, crossing the zero line around the turn of the 2000s. After this point, China’s Gini coefficient remains consistently above the global average and remains relatively constant through 2025.
+
+Based on this pattern alone, the visual evidence suggests that the average difference between China’s Gini coefficient and the global average over the full period may be positive, reflecting that China’s Gini coefficient is, on average, higher than the world mean during later part of the 1990–2025 period.
+
+H~0~: The mean of difference between Gini coefficient in China and world's average is equal to 0.
+
+H~A~: The mean of difference between Gini coefficient in Korea and world's average is greater than 0.
+
+Significance level: 5%
+
+Test: Right-tail test
+
+```{r, message=FALSE, warning=FALSE, results='hide'}
+
+library(infer)
+library(tidyverse)
+
+null_hypothesis <- China_test_1 %>%
+  specify(response = difference) %>%
+  hypothesize(null = "point", mu = 0)
+
+alpha <- 0.05
+
+```
+
+Test statistics for this test is sample mean.
+
+Observed test statistics:
+```{r, message=FALSE, warning=FALSE}
+
+observed_stat <- China_test_1 %>%
+  specify(response = difference) %>%
+  calculate(stat = "mean")
+
+observed_stat
+```
+
+```{r, message=FALSE, warning=FALSE}
+
+library(infer)
+library(tidyverse)
+
+null_distribution <- null_hypothesis %>%
+  generate(reps = 10000, type = "bootstrap") %>%
+  calculate(stat = "mean")
+
+null_distribution %>%
+  visualize() +
+  shade_p_value(obs_stat = observed_stat, direction = "greater")
+
+p_value_tbl <- null_distribution %>%
+  get_p_value(obs_stat = observed_stat, direction = "greater")
+
+p_value_tbl   
+p_value <- p_value_tbl$p_value  
+
+if (p_value < alpha) {
+  conclusion <- "We reject H0: there is evidence that the mean of Gini difference (China Gini − global average) each year is greater than 0."
+} else {
+  conclusion <- "We fail to reject H0: there is not enough evidence that the mean of Gini difference (China Gini − global average) each year is greater than 0."
+}
+
+conclusion
+```
+```{r setup, include=FALSE}
+```
+
+
+```{r, message=FALSE, warning=FALSE}
+
+boot_distn_one_mean <- China_test_1 %>%
+  specify(response = difference) %>%
+  generate(reps = 10000, type = "bootstrap") %>% 
+  calculate(stat = "mean")
+
+ci <- boot_distn_one_mean %>% 
+  get_ci()
+ci
+
+boot_distn_one_mean %>%
+  visualize() +
+  shade_confidence_interval(endpoints = ci)
+
+```
+
+Although the 95% two-sided confidence interval includes zero, the one-sided bootstrap hypothesis test evaluates whether the mean difference is greater than zero and provides sufficient evidence in that direction.Therefore, we have statistical evidence to support the alternative hypothesis that the Gini difference in China is greater than 0.
+
+## Japan
+
+```{r, message=FALSE, warning=FALSE, results='hide'}
+# Load necessary library
+library(dplyr)
+
+
+# Read the CSV files
+world_data <- read.csv("world_data(in).csv")
+income_level <- read.csv("income_level(in).csv") %>%
+  rename(country = name)
+
+
+# Check column types
+str(world_data)
+str(income_level)
+
+# ----- PREPARE WORLD DATASET FOR TEST 1 ------
+
+
+Japan_test_1 <- income_level %>%
+  select(country, year, gini) %>%
+  filter(year >= 1990, year <= 2025) %>%
+  filter(!is.na(gini)) %>%
+  distinct()
+
+  
+sum(is.na(income_level$gini))
+sum(duplicated(Japan_test_1))
+  
+  # World mean each year
+Japan_test_1 <- Japan_test_1 %>% 
+  group_by(year) %>%
+  mutate(world_mean = mean(gini, na.rm = TRUE)) %>%
+  ungroup() %>%
+  
+  # Filter country
+  filter(country == "Japan") %>%
+  
+  # Compute difference between (Japan gini - mean world gini)
+  mutate(difference = gini - world_mean)
+
+```
+
+```{r, message=FALSE, warning=FALSE}
+
+library(ggplot2)
+
+ggplot(Japan_test_1, aes(x = year, y = difference)) +
+  geom_smooth(color = "blue", size = 1.1, se = FALSE, method = "loess") +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+  
+  labs(
+    title = "Annual Difference Between Japan's Gini Coefficient \r\n and the Global Average (1990–2025)",
+    x = "Year",
+    y = "Difference (Japan Gini – Global Average Gini)"
+  ) +
+  
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(size = 12, face = "bold", hjust = 0.5),
+    
+    axis.title.y = element_text(
+      size = 11,     
+      face = "bold", 
+      angle = 90,   
+      vjust = 0.5    
+    )
+  )
+
+```
+
+From 1990 to 2025, Japan’s Gini coefficient remains consistently below the global average, as indicated by negative differences throughout the entire period. The gap is largest in the early 1990s, reaching values close to −10, after which it gradually narrows over time. During the 2000s and 2010s, the difference becomes less negative, stabilizing between approximately −7 and −7.5 toward the end of the period.
+
+Based on this pattern alone, the visual evidence suggests that the average difference between Japan’s Gini coefficient and the global average is negative, implying that Japan’s Gini coefficient is, on average, lower than the global mean over the 1990–2025 period.
+
+H~0~: The mean of difference between Gini coefficient in Japan and world's average is equal to 0.
+
+H~A~: The mean of difference between Gini coefficient in Japan and world's average is less than 0.
+
+Significance level: 5%
+
+Test: Left-tail test
+
+```{r, message=FALSE, warning=FALSE, results='hide'}
+
+library(infer)
+library(tidyverse)
+
+null_hypothesis <- Japan_test_1 %>%
+  specify(response = difference) %>%
+  hypothesize(null = "point", mu = 0)
+
+alpha <- 0.05
+
+```
+
+Test statistics for this test is sample mean.
+
+Observed test statistics:
+```{r, message=FALSE, warning=FALSE}
+
+observed_stat <- Japan_test_1 %>%
+  specify(response = difference) %>%
+  calculate(stat = "mean")
+
+observed_stat
+```
+
+```{r, message=FALSE, warning=FALSE}
+
+library(infer)
+library(tidyverse)
+
+null_distribution <- null_hypothesis %>%
+  generate(reps = 10000, type = "bootstrap") %>%
+  calculate(stat = "mean")
+
+null_distribution %>%
+  visualize() +
+  shade_p_value(obs_stat = observed_stat, direction = "less")
+
+p_value_tbl <- null_distribution %>%
+  get_p_value(obs_stat = observed_stat, direction = "less")
+
+p_value_tbl   
+p_value <- p_value_tbl$p_value  
+
+if (p_value < alpha) {
+  conclusion <- "We reject H0: there is evidence that the mean of Gini difference (Japan Gini − global average) each year is less than 0."
+} else {
+  conclusion <- "We fail to reject H0: there is not enough evidence that the mean of Gini difference (Japan Gini − global average) each year is less than 0."
+}
+
+conclusion
+```
+
+```{r, message=FALSE, warning=FALSE}
+
+boot_distn_one_mean <- Japan_test_1 %>%
+  specify(response = difference) %>%
+  generate(reps = 10000, type = "bootstrap") %>% 
+  calculate(stat = "mean")
+
+ci <- boot_distn_one_mean %>% 
+  get_ci()
+ci
+
+boot_distn_one_mean %>%
+  visualize() +
+  shade_confidence_interval(endpoints = ci)
+
+```
+
+The 95% confidence interval for the average Gini difference in Japan ranges from -8.73 to -7.97, which is below 0. Therefore, we have statistical evidence to support the alternative hypothesis that the Gini difference in Japan is less than 0.
+
+## Mongolia
+
+```{r, message=FALSE, warning=FALSE, results='hide'}
+# Load necessary library
+library(dplyr)
+
+
+# Read the CSV files
+world_data <- read.csv("world_data(in).csv")
+income_level <- read.csv("income_level(in).csv") %>%
+  rename(country = name)
+
+
+# Check column types
+str(world_data)
+str(income_level)
+
+# ----- PREPARE WORLD DATASET FOR TEST 1 ------
+
+
+Mongolia_test_1 <- income_level %>%
+  select(country, year, gini) %>%
+  filter(year >= 1990, year <= 2025) %>%
+  filter(!is.na(gini)) %>%
+  distinct()
+
+  
+sum(is.na(income_level$gini))
+sum(duplicated(Mongolia_test_1))
+  
+  # World mean each year
+Mongolia_test_1 <- Mongolia_test_1 %>% 
+  group_by(year) %>%
+  mutate(world_mean = mean(gini, na.rm = TRUE)) %>%
+  ungroup() %>%
+  
+  # Filter country
+  filter(country == "Mongolia") %>%
+  
+  # Compute difference between (Mongolia gini - mean world gini)
+  mutate(difference = gini - world_mean)
+
+```
+
+```{r, message=FALSE, warning=FALSE}
+
+library(ggplot2)
+
+ggplot(Mongolia_test_1, aes(x = year, y = difference)) +
+  geom_smooth(color = "blue", size = 1.1, se = FALSE, method = "loess") +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+  
+  labs(
+    title = "Annual Difference Between Mongolia's Gini Coefficient \r\n and the Global Average (1990–2025)",
+    x = "Year",
+    y = "Difference (Mongolia Gini – Global Average Gini)"
+  ) +
+  
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(size = 12, face = "bold", hjust = 0.5),
+    
+    axis.title.y = element_text(
+      size = 11,     
+      face = "bold", 
+      angle = 90,   
+      vjust = 0.5    
+    )
+  )
+
+```
+
+From 1990 to 2025, Mongolia’s Gini coefficient is consistently below the global average, with a lot fluctuations over time. In the early 1990s, the difference declines further into negative values, reaching a low point of around −8.5 in the mid-1990s. The gap then narrows during the 2000s, with the difference improving to approximately −5 by the late 2000s. After this period, the difference worsens again, gradually declining to around −7.5 by 2025.
+
+Based on this pattern alone, the visual evidence suggests that the average difference between Mongolia’s Gini coefficient and the global average is negative, indicating that Mongolia’s Gini coefficient is, on average, lower than the world mean over the 35-year period.
+
+H~0~: The mean of difference between Gini coefficient in Mongolia and world's average is equal to 0.
+
+H~A~: The mean of difference between Gini coefficient in Mongolia and world's average is less than 0.
+
+Significance level: 5%
+
+Test: Left-tail test
+
+```{r, message=FALSE, warning=FALSE, results='hide'}
+
+library(infer)
+library(tidyverse)
+
+null_hypothesis <- Mongolia_test_1 %>%
+  specify(response = difference) %>%
+  hypothesize(null = "point", mu = 0)
+
+alpha <- 0.05
+
+```
+
+Test statistics for this test is sample mean.
+
+Observed test statistics:
+```{r, message=FALSE, warning=FALSE}
+
+observed_stat <- Mongolia_test_1 %>%
+  specify(response = difference) %>%
+  calculate(stat = "mean")
+
+observed_stat
+```
+
+```{r, message=FALSE, warning=FALSE}
+
+library(infer)
+library(tidyverse)
+
+null_distribution <- null_hypothesis %>%
+  generate(reps = 10000, type = "bootstrap") %>%
+  calculate(stat = "mean")
+
+null_distribution %>%
+  visualize() +
+  shade_p_value(obs_stat = observed_stat, direction = "less")
+
+p_value_tbl <- null_distribution %>%
+  get_p_value(obs_stat = observed_stat, direction = "less")
+
+p_value_tbl   
+p_value <- p_value_tbl$p_value  
+
+if (p_value < alpha) {
+  conclusion <- "We reject H0: there is evidence that the mean of Gini difference (Mongolia Gini − global average) each year is less than 0."
+} else {
+  conclusion <- "We fail to reject H0: there is not enough evidence that the mean of Gini difference (Mongolia Gini − global average) each year is less than 0."
+}
+
+conclusion
+```
+
+
+```{r, message=FALSE, warning=FALSE}
+
+boot_distn_one_mean <- Mongolia_test_1 %>%
+  specify(response = difference) %>%
+  generate(reps = 10000, type = "bootstrap") %>% 
+  calculate(stat = "mean")
+
+ci <- boot_distn_one_mean %>% 
+  get_ci()
+ci
+
+boot_distn_one_mean %>%
+  visualize() +
+  shade_confidence_interval(endpoints = ci)
+
+```
+
+The 95% confidence interval for the average Gini difference in Mongolia ranges from -7.56 to -6.72, which is below 0. Therefore, we have statistical evidence to support the alternative hypothesis that the Gini difference in Mongolia is less than 0.
+
+## Hong Kong
+
+```{r, message=FALSE, warning=FALSE, results='hide'}
+# Load necessary library
+library(dplyr)
+
+
+# Read the CSV files
+world_data <- read.csv("world_data(in).csv")
+income_level <- read.csv("income_level(in).csv") %>%
+  rename(country = name)
+
+
+# Check column types
+str(world_data)
+str(income_level)
+
+# ----- PREPARE WORLD DATASET FOR TEST 1 ------
+
+
+HK_test_1 <- income_level %>%
+  select(country, year, gini) %>%
+  filter(year >= 1990, year <= 2025) %>%
+  filter(!is.na(gini)) %>%
+  distinct()
+
+  
+sum(is.na(income_level$gini))
+sum(duplicated(HK_test_1))
+  
+  # World mean each year
+HK_test_1 <- HK_test_1 %>% 
+  group_by(year) %>%
+  mutate(world_mean = mean(gini, na.rm = TRUE)) %>%
+  ungroup() %>%
+  
+  # Filter country
+  filter(country == "Hong Kong, China") %>%
+  
+  # Compute difference between (Hong Kong gini - mean world gini)
+  mutate(difference = gini - world_mean)
+
+```
+
+```{r, message=FALSE, warning=FALSE}
+
+library(ggplot2)
+
+ggplot(HK_test_1, aes(x = year, y = difference)) +
+  geom_smooth(color = "blue", size = 1.1, se = FALSE, method = "loess") +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+  
+  labs(
+    title = "Annual Difference Between Hong Kong's Gini Coefficient \r\n and the Global Average (1990–2025)",
+    x = "Year",
+    y = "Difference (Hong Kong Gini – Global Average Gini)"
+  ) +
+  
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(size = 12, face = "bold", hjust = 0.5),
+    
+    axis.title.y = element_text(
+      size = 11,     
+      face = "bold", 
+      angle = 90,   
+      vjust = 0.5    
+    )
+  )
+
+```
+
+From 1990 to 2025, Hong Kong’s Gini coefficient remains consistently above the global average, as shown by positive differences throughout the entire period. The difference increases steadily from approximately 8 in 1990 to over 14 by the late 2010s. After reaching a peak around 2018–2020, the gap decreases slightly but remains well above zero through 2025.
+
+Based on this pattern alone, the visual evidence suggests that the average difference between Hong Kong’s Gini coefficient and the global average is positive, implying that Hong Kong’s Gini coefficient is, on average, higher than the world mean over the period.
+
+H~0~: The mean of difference between Gini coefficient in Mongolia and world's average is equal to 0.
+
+H~A~: The mean of difference between Gini coefficient in Mongolia and world's average is greater than 0.
+
+Significance level: 5%
+
+Test: Right-tail test
+
+```{r, message=FALSE, warning=FALSE, results='hide'}
+
+library(infer)
+library(tidyverse)
+
+null_hypothesis <- HK_test_1 %>%
+  specify(response = difference) %>%
+  hypothesize(null = "point", mu = 0)
+
+alpha <- 0.05
+
+```
+
+Test statistics for this test is sample mean.
+
+Observed test statistics:
+```{r, message=FALSE, warning=FALSE}
+
+observed_stat <- HK_test_1 %>%
+  specify(response = difference) %>%
+  calculate(stat = "mean")
+
+observed_stat
+```
+
+```{r, message=FALSE, warning=FALSE}
+
+library(infer)
+library(tidyverse)
+
+null_distribution <- null_hypothesis %>%
+  generate(reps = 10000, type = "bootstrap") %>%
+  calculate(stat = "mean")
+
+null_distribution %>%
+  visualize() +
+  shade_p_value(obs_stat = observed_stat, direction = "greater")
+
+p_value_tbl <- null_distribution %>%
+  get_p_value(obs_stat = observed_stat, direction = "greater")
+
+p_value_tbl   
+p_value <- p_value_tbl$p_value  
+
+if (p_value < alpha) {
+  conclusion <- "We reject H0: there is evidence that the mean of Gini difference (Hong Kong Gini − global average) each year is greater than 0."
+} else {
+  conclusion <- "We fail to reject H0: there is not enough evidence that the mean of Gini difference (Hong Kong Gini − global average) each year is greater than 0."
+}
+
+conclusion
+```
+
+```{r, message=FALSE, warning=FALSE}
+
+boot_distn_one_mean <- HK_test_1 %>%
+  specify(response = difference) %>%
+  generate(reps = 10000, type = "bootstrap") %>% 
+  calculate(stat = "mean")
+
+ci <- boot_distn_one_mean %>% 
+  get_ci()
+ci
+
+boot_distn_one_mean %>%
+  visualize() +
+  shade_confidence_interval(endpoints = ci)
+
+```
+
+The 95% confidence interval for the average Gini difference in Hong Kong ranges from 12.1 to 13.3, which is above 0. Therefore, we have statistical evidence to support the alternative hypothesis that the Gini difference in Hong Kong is less than 0.
+
+## East Asia
+
+```{r, message=FALSE, warning=FALSE, results='hide'}
+# Load necessary library
+library(dplyr)
+
+
+# Read the CSV files
+world_data <- read.csv("world_data(in).csv")
+income_level <- read.csv("income_level(in).csv") %>%
+  rename(country = name)
+
+
+# Check column types
+str(world_data)
+str(income_level)
+
+# ----- PREPARE WORLD DATASET FOR TEST 1 ------
+
+
+EA_test_1 <- income_level %>%
+  select(country, year, gini) %>%
+  filter(year >= 1990, year <= 2025) %>%
+  filter(!is.na(gini)) %>%
+  distinct()
+
+  
+sum(is.na(income_level$gini))
+sum(duplicated(EA_test_1))
+  
+EA_test_1 <- EA_test_1 %>%
+  mutate(is_EA = country %in% c("China", "South Korea", "Japan", "Mongolia", "Hong Kong, China")) %>%
+  
+  group_by(year) %>%
+  summarise(
+    world_mean = mean(gini, na.rm = TRUE),
+    EA_mean = mean(gini[is_EA], na.rm = TRUE),
+    difference = EA_mean - world_mean,
+    .groups = "drop"
+  )
+
+```
+
+
+```{r, message=FALSE, warning=FALSE}
+
+library(ggplot2)
+
+ggplot(EA_test_1, aes(x = year, y = difference)) +
+  geom_smooth(color = "blue", size = 1.1, se = FALSE, method = "loess") +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+  
+  labs(
+    title = "Annual Difference Between East Asia's Gini Coefficient \r\n and the Global Average (1990–2025)",
+    x = "Year",
+    y = "Difference (East Asia Gini – Global Average Gini)"
+  ) +
+  
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(size = 12, face = "bold", hjust = 0.5),
+    
+    axis.title.y = element_text(
+      size = 11,     
+      face = "bold", 
+      angle = 90,   
+      vjust = 0.5    
+    )
+  )
+
+```
+
+From 1990 to 2025, the East Asia regional average Gini coefficient remains consistently below the global average, as indicated by negative values of the difference throughout the entire period. The gap is largest at the beginning of the period, with the difference reaching under -4 in 1990. The difference then narrows steadily over the 1990s and early 2000s, approaching its smallest magnitude around 2008–2010 at roughly −0.8. After this point, the gap widens slightly again, with the difference gradually declining to around −1 by 2025.
+
+Based on this pattern alone, the visual evidence suggests that the average difference between East Asia’s regional Gini coefficient and the global average is negative, implying that income inequality in East Asia is, on average, lower than the world mean over the 30-year period.
+
+H~0~: The mean of difference between Gini coefficient in East Asia and world's average is equal to 0.
+
+H~A~: The mean of difference between Gini coefficient in East Asia and world's average is less than 0.
+
+Significance level: 5%
+
+Test: Left-tail test
+
+```{r, message=FALSE, warning=FALSE, results='hide'}
+
+library(infer)
+library(tidyverse)
+
+null_hypothesis <- EA_test_1 %>%
+  specify(response = difference) %>%
+  hypothesize(null = "point", mu = 0)
+
+alpha <- 0.05
+
+```
+
+Test statistics for this test is sample mean.
+
+Observed test statistics:
+```{r, message=FALSE, warning=FALSE}
+
+observed_stat <- EA_test_1 %>%
+  specify(response = difference) %>%
+  calculate(stat = "mean")
+
+observed_stat
+```
+
+```{r, message=FALSE, warning=FALSE}
+
+library(infer)
+library(tidyverse)
+
+null_distribution <- null_hypothesis %>%
+  generate(reps = 10000, type = "bootstrap") %>%
+  calculate(stat = "mean")
+
+null_distribution %>%
+  visualize() +
+  shade_p_value(obs_stat = observed_stat, direction = "less")
+
+p_value_tbl <- null_distribution %>%
+  get_p_value(obs_stat = observed_stat, direction = "less")
+
+p_value_tbl   
+p_value <- p_value_tbl$p_value  
+
+if (p_value < alpha) {
+  conclusion <- "We reject H0: there is evidence that the mean of Gini difference (East Asia Gini − global average) each year is less than 0."
+} else {
+  conclusion <- "We fail to reject H0: there is not enough evidence that the mean of Gini difference (East Asia Gini − global average) each year is less than 0."
+}
+
+conclusion
+```
+
+```{r, message=FALSE, warning=FALSE}
+
+boot_distn_one_mean <- EA_test_1 %>%
+  specify(response = difference) %>%
+  generate(reps = 10000, type = "bootstrap") %>% 
+  calculate(stat = "mean")
+
+ci <- boot_distn_one_mean %>% 
+  get_ci()
+ci
+
+boot_distn_one_mean %>%
+  visualize() +
+  shade_confidence_interval(endpoints = ci)
+
+```
+
+The 95% confidence interval for the average Gini difference in East Asia ranges from -2.33 to -1.46, which is below 0. Therefore, we have statistical evidence to support the alternative hypothesis that the Gini difference in East Asia is less than 0.
+
+# 2 INFERENCE FOR A CATEGORICAL VARIABLE
+
+## China
+
+```{r, message=FALSE, warning=FALSE, results='hide'}
+
+# Load necessary library
+library(dplyr)
+
+
+# Read the CSV files
+world_data <- read.csv("world_data(in).csv")
+income_level <- read.csv("income_level(in).csv") %>%
+  rename(country = name)
+
+# Check column types
+str(world_data)
+str(income_level)
+
+# ----- PREPARE WORLD DATASET FOR TEST 2 ------
+
+
+China_test_2 <- world_data %>%
+  select(country, year, average_daily_income_per_person) %>%
+  filter(year >= 1965, year <= 2025) %>%
+  filter(!is.na(average_daily_income_per_person)) %>%
+  distinct()
+
+
+sum(is.na(China_test_2$average_daily_income_per_person))
+sum(duplicated(China_test_2))
+
+# World mean each year
+China_test_2 <- China_test_2 %>% 
+  group_by(year) %>%
+  mutate(world_mean = mean(average_daily_income_per_person, na.rm = TRUE)) %>%
+  ungroup() %>%
+  filter(country == "China") %>%
+  mutate(
+    difference = average_daily_income_per_person - world_mean,
+    higher_than_world = case_when(
+      difference > 0 ~ "Yes",
+      difference < 0 ~ "No",
+      difference == 0 ~ "Equal"
+    )
+  )
+
+```
+
+
+```{r, message=FALSE, warning=FALSE}
+
+library(ggplot2)
+
+ggplot(China_test_2, aes(x = year, y = difference)) +
+  geom_smooth(color = "blue", size = 1.1, se = FALSE, method = "loess") +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+  
+  labs(
+    title = "Annual Difference Between China’s Daily Income \r\n and the Global Average (1990–2025)",
+    x = "Year",
+    y = "Difference (China Income – Global Average Income)"
+  ) +
+  
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(size = 12, face = "bold", hjust = 0.5),
+    
+    axis.title.y = element_text(
+      size = 11,     
+      face = "bold", 
+      angle = 90,   
+      vjust = 0.5    
+    )
+  )
+
+```
+
+China’s daily income remains consistently below the global average throughout the entire period from 1965 to 2025, as indicated by negative values of the difference in all years. The gap widens gradually from the late 1960s into the early 2000s, reaching its most negative point around the early 2000s. After this period, the difference begins to narrow, indicating faster income growth relative to the global average, but it remains below zero through 2025.
+
+Based on this line chart, the visual evidence suggests that China’s daily income is below the global average for all observed years from 1965 to 2025.
+
+
+H~0~: prop(higher_than_world:"Yes")= 0.5 (China's income is higher than the global average daily income in half of the years)
+
+H~A~: prop(higher_than_world:"Yes") < 0.5 (China's income is higher than the global average daily income in less than half of the years)
+
+Motivation for the 50% threshold: The 50% proportion represents a clear majority. Exceeding it indicates that a country’s income is above the global average for most years, making the conclusions easy to communicate and compare across countries.
+
+Significance level: 5%
+
+Test: Left-tail test
+
+Test statistics for this test is sample proportion.
+
+```{r, message=FALSE, warning=FALSE}
+
+library(tidyverse)
+library(stringr)
+library(infer)
+
+China_test_2 <- China_test_2 %>%
+  mutate(above_world = if_else(difference > 0, "Yes", "No"))
+
+x <- sum(China_test_2$above_world == "Yes")  
+n <- nrow(China_test_2)                      
+
+binom.test(x, n, p = 0.5, alternative = "less")
+
+
+```
+
+China exceeds the global mean in 0 out of 61 years. An exact one-sample binomial test with a left-tailed alternative provides strong statistical evidence that the true proportion of years China is above the global mean is less than 0.5. The 95% confidence interval for sample proportion ranges from 0 to 0.0479, indicating that, based on the observed data, the proportion of “above-global-mean” years of China is very likely close to zero.
+
+Conclusion: China’s daily income is above the global mean in far fewer than half of the observed years (1965–2025). 
+
+## Japan
+
+```{r, message=FALSE, warning=FALSE, results='hide'}
+
+# Load necessary library
+library(dplyr)
+
+
+# Read the CSV files
+world_data <- read.csv("world_data(in).csv")
+income_level <- read.csv("income_level(in).csv") %>%
+  rename(country = name)
+
+# Check column types
+str(world_data)
+str(income_level)
+
+# ----- PREPARE WORLD DATASET FOR TEST 2 ------
+
+
+Japan_test_2 <- world_data %>%
+  select(country, year, average_daily_income_per_person) %>%
+  filter(year >= 1965, year <= 2025) %>%
+  filter(!is.na(average_daily_income_per_person)) %>%
+  distinct()
+
+
+sum(is.na(Japan_test_2$average_daily_income_per_person))
+sum(duplicated(Japan_test_2))
+
+# World mean each year
+Japan_test_2 <- Japan_test_2 %>% 
+  group_by(year) %>%
+  mutate(world_mean = mean(average_daily_income_per_person, na.rm = TRUE)) %>%
+  ungroup() %>%
+  filter(country == "Japan") %>%
+  mutate(
+    difference = average_daily_income_per_person - world_mean,
+    higher_than_world = case_when(
+      difference > 0 ~ "Yes",
+      difference < 0 ~ "No",
+      difference == 0 ~ "Equal"
+    )
+  )
+
+```
+
+
+```{r, message=FALSE, warning=FALSE}
+
+library(ggplot2)
+
+ggplot(Japan_test_2, aes(x = year, y = difference)) +
+  geom_smooth(color = "blue", size = 1.1, se = FALSE, method = "loess") +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+  
+  labs(
+    title = "Annual Difference Between Japan’s Daily Income \r\n and the Global Average (1990–2025)",
+    x = "Year",
+    y = "Difference (Japan Income – Global Average Income)"
+  ) +
+  
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(size = 12, face = "bold", hjust = 0.5),
+    
+    axis.title.y = element_text(
+      size = 11,     
+      face = "bold", 
+      angle = 90,   
+      vjust = 0.5    
+    )
+  )
+
+```
+
+Japan’s daily income is above the global average throughout the entire period shown, as reflected by consistently positive values of the difference. The gap increases steadily from the late 1960s through the 1980s and 1990s, indicating rapid income growth relative to the global mean. Around the late 1990s to early 2000s, the difference stabilizes briefly before continuing to rise, reaching its highest levels by 2025.
+
+Based on this line chart, the visual evidence suggests that Japan’s daily income is consistently higher than the global average for the full period from 1965 to 2025.
+
+H~0~: prop(higher_than_world:"Yes")= 0.5 (Japan's income is higher than the global average daily income in half of the years)
+
+H~A~: prop(higher_than_world:"Yes") > 0.5 (Japan's income is higher than the global average daily income in more than half of the years)
+
+Motivation for the 50% threshold: The 50% proportion represents a clear majority. Exceeding it indicates that a country’s income is above the global average for most years, making the conclusions easy to communicate and compare across countries.
+
+Significance level: 5%
+
+Test: Right-tail test
+
+Test statistics for this test is sample proportion.
+
+```{r, message=FALSE, warning=FALSE}
+
+library(tidyverse)
+library(stringr)
+library(infer)
+
+Japan_test_2 <- Japan_test_2 %>%
+  mutate(above_world = if_else(difference > 0, "Yes", "No"))
+
+x <- sum(Japan_test_2$above_world == "Yes")  
+n <- nrow(Japan_test_2)                      
+
+binom.test(x, n, p = 0.5, alternative = "greater")
+
+
+```
+
+Korea exceeds the global mean in 61 out of 61 years. An exact one-sample binomial test with a right-tailed alternative provides strong statistical evidence that the true proportion of years Korea is above the global mean is more than 0.5. The 95% confidence interval for sample proportion ranges from 0.952 to 1, indicating that, based on the observed data, the proportion of “above-global-mean” years of Japan is very likely close to 1.
+
+Conclusion: Japan’s daily income is above the global mean in far more than half of the observed years (1965–2025).
+
+## Mongolia
+
+```{r, message=FALSE, warning=FALSE, results='hide'}
+
+# Load necessary library
+library(dplyr)
+
+
+# Read the CSV files
+world_data <- read.csv("world_data(in).csv")
+income_level <- read.csv("income_level(in).csv") %>%
+  rename(country = name)
+
+# Check column types
+str(world_data)
+str(income_level)
+
+# ----- PREPARE WORLD DATASET FOR TEST 2 ------
+
+
+Mongolia_test_2 <- world_data %>%
+  select(country, year, average_daily_income_per_person) %>%
+  filter(year >= 1965, year <= 2025) %>%
+  filter(!is.na(average_daily_income_per_person)) %>%
+  distinct()
+
+
+sum(is.na(Mongolia_test_2$average_daily_income_per_person))
+sum(duplicated(Mongolia_test_2))
+
+# World mean each year
+Mongolia_test_2 <- Mongolia_test_2 %>% 
+  group_by(year) %>%
+  mutate(world_mean = mean(average_daily_income_per_person, na.rm = TRUE)) %>%
+  ungroup() %>%
+  filter(country == "Mongolia") %>%
+  mutate(
+    difference = average_daily_income_per_person - world_mean,
+    higher_than_world = case_when(
+      difference > 0 ~ "Yes",
+      difference < 0 ~ "No",
+      difference == 0 ~ "Equal"
+    )
+  )
+
+```
+
+
+```{r, message=FALSE, warning=FALSE}
+
+library(ggplot2)
+
+ggplot(Mongolia_test_2, aes(x = year, y = difference)) +
+  geom_smooth(color = "blue", size = 1.1, se = FALSE, method = "loess") +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+  
+  labs(
+    title = "Annual Difference Between Mongolia’s Daily Income \r\n and the Global Average (1990–2025)",
+    x = "Year",
+    y = "Difference (Mongolia Income – Global Average Income)"
+  ) +
+  
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(size = 12, face = "bold", hjust = 0.5),
+    
+    axis.title.y = element_text(
+      size = 11,     
+      face = "bold", 
+      angle = 90,   
+      vjust = 0.5    
+    )
+  )
+
+```
+
+Mongolia’s daily income remains below the global average across the entire period, as shown by persistently negative values of the difference. The gap widens slightly from the late 1960s through the 1980s, followed by a brief narrowing in the early 1990s. After this period, the difference becomes increasingly negative again, indicating that Mongolia’s income falls further behind the global average, particularly after the 2000s.
+
+Based on this line chart, the visual evidence suggests that Mongolia’s daily income is consistently lower than the global average from 1965 to 2025.
+
+H~0~: prop(higher_than_world:"Yes")= 0.5 (Mongolia's income is higher than the global average daily income in half of the years)
+
+H~A~: prop(higher_than_world:"Yes") < 0.5 (Mongolia's income is higher than the global average daily income in less than half of the years)
+
+Motivation for the 50% threshold: The 50% proportion represents a clear majority. Exceeding it indicates that a country’s income is above the global average for most years, making the conclusions easy to communicate and compare across countries.
+
+Significance level: 5%
+
+Test: Left-tail test
+
+Test statistics for this test is sample proportion.
+
+```{r, message=FALSE, warning=FALSE}
+
+library(tidyverse)
+library(stringr)
+library(infer)
+
+Mongolia_test_2 <- Mongolia_test_2 %>%
+  mutate(above_world = if_else(difference > 0, "Yes", "No"))
+
+x <- sum(Mongolia_test_2$above_world == "Yes")  
+n <- nrow(Mongolia_test_2)                      
+
+binom.test(x, n, p = 0.5, alternative = "less")
+
+
+```
+
+Mongolia exceeds the global mean in 0 out of 61 years. An exact one-sample binomial test with a left-tailed alternative provides strong statistical evidence that the true proportion of years Mongolia is above the global mean is less than 0.5. The 95% confidence interval for sample proportion ranges from 0 to 0.0479, indicating that, based on the observed data, the proportion of “above-global-mean” years of Mongolia is very likely close to 0.
+
+Conclusion: Mongolia’s daily income is above the global mean in far less than half of the observed years (1965–2025).
+
+## Hong Kong
+
+```{r, message=FALSE, warning=FALSE, results='hide'}
+
+# Load necessary library
+library(dplyr)
+
+
+# Read the CSV files
+world_data <- read.csv("world_data(in).csv")
+income_level <- read.csv("income_level(in).csv") %>%
+  rename(country = name)
+
+# Check column types
+str(world_data)
+str(income_level)
+
+# ----- PREPARE WORLD DATASET FOR TEST 2 ------
+
+
+HK_test_2 <- world_data %>%
+  select(country, year, average_daily_income_per_person) %>%
+  filter(year >= 1965, year <= 2025) %>%
+  filter(!is.na(average_daily_income_per_person)) %>%
+  distinct()
+
+
+sum(is.na(HK_test_2$average_daily_income_per_person))
+sum(duplicated(HK_test_2))
+
+# World mean each year
+HK_test_2 <- HK_test_2 %>% 
+  group_by(year) %>%
+  mutate(world_mean = mean(average_daily_income_per_person, na.rm = TRUE)) %>%
+  ungroup() %>%
+  filter(country == "Hong Kong, China") %>%
+  mutate(
+    difference = average_daily_income_per_person - world_mean,
+    higher_than_world = case_when(
+      difference > 0 ~ "Yes",
+      difference < 0 ~ "No",
+      difference == 0 ~ "Equal"
+    )
+  )
+
+```
+
+
+```{r, message=FALSE, warning=FALSE}
+
+library(ggplot2)
+
+ggplot(HK_test_2, aes(x = year, y = difference)) +
+  geom_smooth(color = "blue", size = 1.1, se = FALSE, method = "loess") +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+  
+  labs(
+    title = "Annual Difference Between Hong Kong’s Daily Income \r\n and the Global Average (1990–2025)",
+    x = "Year",
+    y = "Difference (Hong Kong Income – Global Average Income)"
+  ) +
+  
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(size = 12, face = "bold", hjust = 0.5),
+    
+    axis.title.y = element_text(
+      size = 11,     
+      face = "bold", 
+      angle = 90,   
+      vjust = 0.5    
+    )
+  )
+
+```
+
+Hong Kong’s daily income starts slightly below the global average in the late 1960s, as indicated by negative values of the difference in the early years. The difference then increases steadily and crosses the zero line around the early 1970s, after which Hong Kong’s daily income remains consistently above the global average. From that point onward, the gap widens substantially, with a strong upward trend continuing through 2025.
+
+Based on this line chart, the visual evidence suggests that Hong Kong’s daily income is above the global average for the majority of years from 1965 to 2025.
+
+H~0~: prop(higher_than_world:"Yes")= 0.5 (Hong Kong's income is higher than the global average daily income in half of the years)
+
+H~A~: prop(higher_than_world:"Yes") > 0.5 (Hong Kong's income is higher than the global average daily income in more than half of the years)
+
+Motivation for the 50% threshold: The 50% proportion represents a clear majority. Exceeding it indicates that a country’s income is above the global average for most years, making the conclusions easy to communicate and compare across countries.
+
+Significance level: 5%
+
+Test: Right-tail test
+
+```{r, message=FALSE, warning=FALSE, results='hide'}
+
+library(infer)
+library(tidyverse)
+
+# Specify the null hypothesis
+null_hypothesis <- HK_test_2 %>%
+  specify(response = higher_than_world, success = "Yes") %>%
+  hypothesize(null = "point", p = 0.5)
+
+alpha <- 0.05
+
+```
+
+Test statistics for this test is sample proportion.
+
+Observed test statistics:
+
+```{r, message=FALSE, warning=FALSE}
+
+(observed_stat <- HK_test_2 %>%
+    specify(response = higher_than_world, success = "Yes") %>%
+    calculate(stat = "prop"))
+
+```
+
+```{r, message=FALSE, warning=FALSE}
+
+# Generate the null distribution
+null_distribution <- null_hypothesis %>%
+  generate(reps = 10000, type = "draw") %>%
+  calculate(stat = "prop")
+
+null_distribution %>%
+  visualize() +
+  shade_p_value(obs_stat = observed_stat, direction = "greater")
+
+p_value_tbl <- null_distribution %>%
+  get_p_value(obs_stat = observed_stat, direction = "greater")
+
+p_value_tbl   
+p_value <- p_value_tbl$p_value  
+
+# Test conclusion
+if (p_value < alpha) {
+  conclusion <- "We reject H0: there is evidence that Hong Kong's income is higher than the global average daily income in the majority of the years."
+} else {
+  conclusion <- "We fail to reject H0: there is not enough evidence that Hong Kong's income is higher than the global average daily income in the majority of the years."
+}
+
+conclusion
+
+```
+
+```{r, message=FALSE, warning=FALSE}
+
+boot_distn_one_prop <- HK_test_2 %>% 
+  specify(response = higher_than_world, success = "Yes") %>% 
+  generate(reps = 10000, type = "bootstrap") %>% 
+  calculate(stat = "prop")
+
+ci <-boot_distn_one_prop  %>% 
+  get_ci()
+ci
+
+boot_distn_one_prop  %>% 
+  visualize(endpoints = ci, direction = "between") +shade_confidence_interval(endpoints=ci)
+
+```
+
+The 95% confidence interval for the proportion of years daily income in Hong Kong higher than world's average ranges from 0.820 to 0.967, which is higher than 50%. Therefore, we have statistical evidence to support the alternative hypothesis that Hong Kong's income is higher than the global average daily income in the majority of the years.
+
+## East Asia
+
+```{r, message=FALSE, warning=FALSE, results='hide'}
+# Load necessary library
+library(dplyr)
+
+# Read the CSV files
+world_data <- read.csv("world_data(in).csv")
+income_level <- read.csv("income_level(in).csv") %>%
+  rename(country = name)
+
+# Check column types
+str(world_data)
+str(income_level)
+
+# ----- PREPARE WORLD DATASET FOR TEST 2 -----
+
+EA_test_2 <- world_data %>%
+  select(country, year, average_daily_income_per_person) %>%
+  filter(year >= 1965, year <= 2025) %>%
+  filter(!is.na(average_daily_income_per_person)) %>%
+  distinct() %>%
+  
+  # Filter East Asia countries
+  mutate(is_EA = country %in%
+           c("China", "South Korea", "Japan", "Mongolia", "Hong Kong, China")) %>%
+  
+  # Aggregate to 1 row per year
+  group_by(year) %>%
+  summarise(
+    world_mean = mean(average_daily_income_per_person, na.rm = TRUE),
+    EA_mean = mean(average_daily_income_per_person[is_EA], na.rm = TRUE),
+    difference = EA_mean - world_mean,
+    .groups = "drop"
+  ) %>%
+  
+  # Create categorical indicator
+  mutate(
+    higher_than_world = case_when(
+      difference > 0 ~ "Yes",
+      difference < 0 ~ "No",
+      difference == 0 ~ "Equal"
+    )
+  )
+
+```
+
+
+```{r, message=FALSE, warning=FALSE}
+
+library(ggplot2)
+
+ggplot(EA_test_2, aes(x = year, y = difference)) +
+  geom_smooth(color = "blue", size = 1.1, se = FALSE, method = "loess") +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+  labs(
+    title = "Annual Difference Between East Asia's Daily Income \n and the Global Average (1965–2025)",
+    x = "Year",
+    y = "Difference (East Asia Income – Global Average Income)"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(size = 12, face = "bold", hjust = 0.5),
+    axis.title.y = element_text(size = 11, face = "bold", angle = 90, vjust = 0.5)
+  )
+
+```
+
+East Asia regional average daily income is below the global average in the earlier part of the period, as indicated by negative values of the difference from the late 1960s through the early 1980s. The gap then narrows steadily and crosses the zero line in the mid-1980s. After this point, East Asia’s average daily income remains consistently above the global average, with the difference increasing over time and continuing to widen through 2025.
+
+Based on this line chart, the visual evidence suggests that East Asia’s regional average daily income is higher than the global average for the majority of years from 1965 to 2025.
+
+H~0~: prop(higher_than_world:"Yes")= 0.5 (East Asia's income is higher than the global average daily income in half of the years)
+
+H~A~: prop(higher_than_world:"Yes") > 0.5 (East Asia's income is higher than the global average daily income in more than half of the years)
+
+Motivation for the 50% threshold: The 50% proportion represents a clear majority. Exceeding it indicates that a country’s income is above the global average for most years, making the conclusions easy to communicate and compare across countries.
+
+Significance level: 5%
+
+Test: Right-tail test
+
+```{r, message=FALSE, warning=FALSE, results='hide'}
+
+library(infer)
+library(tidyverse)
+
+# Specify the null hypothesis
+null_hypothesis <- EA_test_2 %>%
+  specify(response = higher_than_world, success = "Yes") %>%
+  hypothesize(null = "point", p = 0.5)
+
+alpha <- 0.05
+
+```
+
+Test statistics for this test is sample proportion.
+
+Observed test statistics:
+
+```{r, message=FALSE, warning=FALSE}
+
+(observed_stat <- EA_test_2 %>%
+    specify(response = higher_than_world, success = "Yes") %>%
+    calculate(stat = "prop"))
+
+```
+
+
+```{r, message=FALSE, warning=FALSE}
+
+# Generate the null distribution
+null_distribution <- null_hypothesis %>%
+  generate(reps = 10000, type = "draw") %>%
+  calculate(stat = "prop")
+
+null_distribution %>%
+  visualize() +
+  shade_p_value(obs_stat = observed_stat, direction = "greater")
+
+p_value_tbl <- null_distribution %>%
+  get_p_value(obs_stat = observed_stat, direction = "greater")
+
+p_value_tbl   
+p_value <- p_value_tbl$p_value  
+
+# Test conclusion
+if (p_value < alpha) {
+  conclusion <- "We reject H0: there is evidence that East Asia's income is higher than the global average daily income in the majority of the years."
+} else {
+  conclusion <- "We fail to reject H0: there is not enough evidence that East Asia's income is higher than the global average daily income in the majority of the years."
+}
+
+conclusion
+
+```
+
+
+```{r, message=FALSE, warning=FALSE}
+
+boot_distn_one_prop <- EA_test_2 %>% 
+  specify(response = higher_than_world, success = "Yes") %>% 
+  generate(reps = 10000, type = "bootstrap") %>% 
+  calculate(stat = "prop")
+
+ci <-boot_distn_one_prop  %>% 
+  get_ci()
+ci
+
+boot_distn_one_prop  %>% 
+  visualize(endpoints = ci, direction = "between") +shade_confidence_interval(endpoints=ci)
+
+```
+
+The 95% confidence interval for the proportion of years daily income in East Asia higher than world's average ranges from 0.574 to 0.803, which is higher than 50%. Therefore, we have statistical evidence to support the alternative hypothesis that East Asia's income is higher than the global average daily income in the majority of the years.
+
+# 3 HYPOTHESIS TEST FOR DEPENDENCE BETWEEN TWO CATEGORICAL VARIABLES
+
+## China
+
+```{r, message=FALSE, warning=FALSE,results='hide'}
+
+# ----- PREPARE WORLD DATASET FOR TEST 3 ------
+
+world_data <- world_data %>%
+  mutate(
+    fertility_group = case_when(
+      babies_per_woman < 1.3 ~ "<1.3",
+      babies_per_woman >= 1.3 & babies_per_woman < 2.1 ~ "1.3–<2.1",
+      babies_per_woman >= 2.1 & babies_per_woman < 3.0 ~ "2.1–<3.0",
+      babies_per_woman >= 3.0 & babies_per_woman < 4.5 ~ "3.0–<4.5",
+      babies_per_woman >= 4.5 ~ ">=4.5",
+      TRUE ~ NA_character_
+    )
+  )
+
+China_test_3 <- world_data %>%
+  select(country, year, fertility_group, income_level) %>%
+  filter(year >= 1900, year <= 2025) %>%
+  filter(!is.na(fertility_group)) %>%
+  filter(!is.na(income_level)) %>%
+  distinct() %>%
+  filter(country == "China")
+
+sum(is.na(China_test_3$fertility_group))
+sum(is.na(China_test_3$income_level))
+sum(duplicated(China_test_3))
+
+```
+
+
+```{r, message=FALSE, warning=FALSE}
+
+library(ggplot2)
+
+ggplot(China_test_3, aes(x = fertility_group, fill = income_level)) +
+  geom_bar(position = "fill", color = "black") +
+  labs(
+    title = "Income Distribution by Fertility Groups in China (1900–2025)",
+    subtitle = "Proportions of income levels across fertility groups",
+    x = "Fertility Group",
+    y = "Proportion",
+    fill = "Income Level"
+  ) +
+  scale_y_continuous(labels = scales::percent) +
+  scale_fill_brewer(palette = "Paired") +
+  theme_minimal(base_size = 14) +
+  theme(
+    # Title
+    plot.title = element_text(
+      size = 12,
+      face = "bold",
+      hjust = 0.5
+    ),
+    plot.subtitle = element_text(
+      size = 11,
+      hjust = 0.5
+    ),
+    
+    # Axis titles
+    axis.title.x = element_text(
+      size = 11,
+      face = "bold"
+    ),
+    axis.title.y = element_text(
+      size = 11,
+      face = "bold"
+    ),
+    
+    # Axis text
+    axis.text.x = element_text(size = 11),
+    axis.text.y = element_text(size = 11),
+    
+    # Legend
+    legend.title = element_text(size = 11, face = "bold"),
+    legend.text = element_text(size = 10)
+  )
+
+```
+
+The stacked bar chart for China shows a clear variation in income level distribution across fertility groups. The lowest fertility group (<1.3) is entirely composed of higher income levels, while intermediate fertility groups (1.3–<2.1) display a mix of middle and higher income categories. In contrast, higher fertility groups (2.1–<3.0 and above) are dominated by lower income levels.
+
+Overall, income levels in China appear to decline as fertility increases, suggesting an association between income level and birth rate. This visual evidence indicates that fertility group and income level are likely not independent, motivating a formal chi-square test of independence.
+
+H~0~: There is no relationship between income level and fertility rate in China
+
+H~A~: There is strong relationship between income level and fertility rate in China
+
+Significance level: 5%
+
+Test: Right-tail test
+
+```{r, message=FALSE, warning=FALSE,results='hide'}
+
+library(infer)
+library(DT)
+library(tidyverse)
+
+# Specify the null hypothesis
+null_hypothesis <- China_test_3 %>%
+  specify(income_level ~ fertility_group) %>%
+  hypothesize(null = "independence")
+
+alpha <- 0.05
+
+```
+
+```{r, message=FALSE, warning=FALSE}
+
+(observed_stat <- China_test_3 %>%
+  specify(income_level ~ fertility_group) %>%
+  calculate(stat = "Chisq"))
+
+```
+
+
+```{r, message=FALSE, warning=FALSE}
+
+null_distribution <- null_hypothesis %>%
+  generate(reps = 10000, type = "permute") %>%
+  calculate(stat = "Chisq")
+
+null_distribution %>%
+  visualize() +
+  shade_p_value(obs_stat = observed_stat, direction = "greater")
+
+p_value_tbl <- null_distribution %>%
+  get_p_value(obs_stat = observed_stat, direction = "greater")
+
+p_value_tbl   
+
+p_value <- p_value_tbl$p_value  
+
+# Test conclusion
+if (p_value < alpha) {
+  conclusion <- "We reject H0: there is evidence that there is strong relationship between income level and fertility rate in China."
+} else {
+  conclusion <- "We fail to reject H0: there is not enough evidence that there is strong relationship between income level and fertility rate in China."
+}
+
+conclusion
+
+```
+
+
+## Japan
+
+```{r, message=FALSE, warning=FALSE,results='hide'}
+
+# ----- PREPARE WORLD DATASET FOR TEST 3 ------
+
+world_data <- world_data %>%
+  mutate(
+    fertility_group = case_when(
+      babies_per_woman < 1.3 ~ "<1.3",
+      babies_per_woman >= 1.3 & babies_per_woman < 2.1 ~ "1.3–<2.1",
+      babies_per_woman >= 2.1 & babies_per_woman < 3.0 ~ "2.1–<3.0",
+      babies_per_woman >= 3.0 & babies_per_woman < 4.5 ~ "3.0–<4.5",
+      babies_per_woman >= 4.5 ~ ">=4.5",
+      TRUE ~ NA_character_
+    )
+  )
+
+Japan_test_3 <- world_data %>%
+  select(country, year, fertility_group, income_level) %>%
+  filter(year >= 1900, year <= 2025) %>%
+  filter(!is.na(fertility_group)) %>%
+  filter(!is.na(income_level)) %>%
+  distinct() %>%
+  filter(country == "Japan")
+
+sum(is.na(Japan_test_3$fertility_group))
+sum(is.na(Japan_test_3$income_level))
+sum(duplicated(Japan_test_3))
+
+```
+
+
+```{r, message=FALSE, warning=FALSE}
+
+library(ggplot2)
+
+ggplot(Japan_test_3, aes(x = fertility_group, fill = income_level)) +
+  geom_bar(position = "fill", color = "black") +
+  labs(
+    title = "Income Distribution by Fertility Groups in Japan (1900–2025)",
+    subtitle = "Proportions of income levels across fertility groups",
+    x = "Fertility Group",
+    y = "Proportion",
+    fill = "Income Level"
+  ) +
+  scale_y_continuous(labels = scales::percent) +
+  scale_fill_brewer(palette = "Paired") +
+  theme_minimal(base_size = 14) +
+  theme(
+    # Title
+    plot.title = element_text(
+      size = 12,
+      face = "bold",
+      hjust = 0.5
+    ),
+    plot.subtitle = element_text(
+      size = 11,
+      hjust = 0.5
+    ),
+    
+    # Axis titles
+    axis.title.x = element_text(
+      size = 11,
+      face = "bold"
+    ),
+    axis.title.y = element_text(
+      size = 11,
+      face = "bold"
+    ),
+    
+    # Axis text
+    axis.text.x = element_text(size = 11),
+    axis.text.y = element_text(size = 11),
+    
+    # Legend
+    legend.title = element_text(size = 11, face = "bold"),
+    legend.text = element_text(size = 10)
+  )
+
+```
+
+In Japan, the distribution of income levels differs noticeably across fertility categories. The lowest fertility group (<1.3) is overwhelmingly associated with the highest income level (level 4), whereas fertility group (1.3 - <2.1) exhibit a mixed distribution across income levels. Higher fertility groups show a greater concentration in lower and middle income levels.
+
+Taken together, the chart suggests a relationship between income level and fertility in Japan, where lower fertility is associated with higher income status. This observed variation supports the hypothesis that income level and fertility group are associated, and motivates a formal chi-square test of independence.
+
+H~0~: There is no relationship between income level and fertility rate in Japan.
+
+H~A~: There is strong relationship between income level and fertility rate in Japan.
+
+Significance level: 5%
+
+Test: Right-tail test
+
+```{r, message=FALSE, warning=FALSE,results='hide'}
+
+library(infer)
+library(DT)
+library(tidyverse)
+
+# Specify the null hypothesis
+null_hypothesis <- Japan_test_3 %>%
+  specify(income_level ~ fertility_group) %>%
+  hypothesize(null = "independence")
+
+alpha <- 0.05
+
+```
+
+```{r, message=FALSE, warning=FALSE}
+
+(observed_stat <- Japan_test_3 %>%
+  specify(income_level ~ fertility_group) %>%
+  calculate(stat = "Chisq"))
+
+```
+
+
+```{r, message=FALSE, warning=FALSE}
+
+null_distribution <- null_hypothesis %>%
+  generate(reps = 10000, type = "permute") %>%
+  calculate(stat = "Chisq")
+
+null_distribution %>%
+  visualize() +
+  shade_p_value(obs_stat = observed_stat, direction = "greater")
+
+p_value_tbl <- null_distribution %>%
+  get_p_value(obs_stat = observed_stat, direction = "greater")
+
+p_value_tbl   
+
+p_value <- p_value_tbl$p_value  
+
+# Test conclusion
+if (p_value < alpha) {
+  conclusion <- "We reject H0: there is evidence that there is strong relationship between income level and fertility rate in Japan."
+} else {
+  conclusion <- "We fail to reject H0: there is not enough evidence that there is strong relationship between income level and fertility rate in Japan."
+}
+
+conclusion
+
+```
+
+## Mongolia
+
+```{r, message=FALSE, warning=FALSE,results='hide'}
+
+# ----- PREPARE WORLD DATASET FOR TEST 3 ------
+
+world_data <- world_data %>%
+  mutate(
+    fertility_group = case_when(
+      babies_per_woman < 1.3 ~ "<1.3",
+      babies_per_woman >= 1.3 & babies_per_woman < 2.1 ~ "1.3–<2.1",
+      babies_per_woman >= 2.1 & babies_per_woman < 3.0 ~ "2.1–<3.0",
+      babies_per_woman >= 3.0 & babies_per_woman < 4.5 ~ "3.0–<4.5",
+      babies_per_woman >= 4.5 ~ ">=4.5",
+      TRUE ~ NA_character_
+    )
+  )
+
+Mongolia_test_3 <- world_data %>%
+  select(country, year, fertility_group, income_level) %>%
+  filter(year >= 1900, year <= 2025) %>%
+  filter(!is.na(fertility_group)) %>%
+  filter(!is.na(income_level)) %>%
+  distinct() %>%
+  filter(country == "Mongolia")
+
+sum(is.na(Mongolia_test_3$fertility_group))
+sum(is.na(Mongolia_test_3$income_level))
+sum(duplicated(Mongolia_test_3))
+
+```
+
+
+```{r, message=FALSE, warning=FALSE}
+
+library(ggplot2)
+
+ggplot(Mongolia_test_3, aes(x = fertility_group, fill = income_level)) +
+  geom_bar(position = "fill", color = "black") +
+  labs(
+    title = "Income Distribution by Fertility Groups in Mongolia (1900–2025)",
+    subtitle = "Proportions of income levels across fertility groups",
+    x = "Fertility Group",
+    y = "Proportion",
+    fill = "Income Level"
+  ) +
+  scale_y_continuous(labels = scales::percent) +
+  scale_fill_brewer(palette = "Paired") +
+  theme_minimal(base_size = 14) +
+  theme(
+    # Title
+    plot.title = element_text(
+      size = 12,
+      face = "bold",
+      hjust = 0.5
+    ),
+    plot.subtitle = element_text(
+      size = 11,
+      hjust = 0.5
+    ),
+    
+    # Axis titles
+    axis.title.x = element_text(
+      size = 11,
+      face = "bold"
+    ),
+    axis.title.y = element_text(
+      size = 11,
+      face = "bold"
+    ),
+    
+    # Axis text
+    axis.text.x = element_text(size = 11),
+    axis.text.y = element_text(size = 11),
+    
+    # Legend
+    legend.title = element_text(size = 11, face = "bold"),
+    legend.text = element_text(size = 10)
+  )
+
+```
+
+For Mongolia, the income distribution varied across fertility groups. Lower fertility groups show a relatively higher share of middle income levels, while higher fertility groups (2.1–<3.0 and 3.0–<4.5) exhibit increased proportions of lower income levels.
+
+Overall, the chart suggests that higher fertility in Mongolia is possibly associated with lower income categories. The differences in distribution across fertility groups provides visual evidence of a potential dependence between fertility level and income category.
+
+
+The bar chart for Mongolia shows differences in income level distribution across fertility groups. In the highest fertility group (≥4.5), the distribution is split between income level 1 and income level 2, with income level 1 accounting for the largest share. The fertility group 1.3–<2.1 is composed entirely of income level 2. In the intermediate fertility group (2.1–<3.0), income level 3 represents the majority of observations. For the fertility group 3.0–<4.5, income level 2 dominates, alongside a smaller share of income level 3.
+
+Overall, income distributions vary substantially across fertility groups in Mongolia, but the relationship does not follow a simple increasing or decreasing trend. Nevertheless, the clear differences in income distribution across fertility categories suggest that income level and fertility group are likely associated rather than independent, motivating a formal chi-square test of independence.
+
+H~0~: There is no relationship between income level and fertility rate in Mongolia.
+
+H~A~: There is strong relationship between income level and fertility rate in Mongolia.
+
+Significance level: 5%
+
+Test: Right-tail test
+
+```{r, message=FALSE, warning=FALSE,results='hide'}
+
+library(infer)
+library(DT)
+library(tidyverse)
+
+# Specify the null hypothesis
+null_hypothesis <- Mongolia_test_3 %>%
+  specify(income_level ~ fertility_group) %>%
+  hypothesize(null = "independence")
+
+alpha <- 0.05
+
+```
+
+```{r, message=FALSE, warning=FALSE}
+
+(observed_stat <- Mongolia_test_3 %>%
+  specify(income_level ~ fertility_group) %>%
+  calculate(stat = "Chisq"))
+
+```
+
+
+```{r, message=FALSE, warning=FALSE}
+
+null_distribution <- null_hypothesis %>%
+  generate(reps = 10000, type = "permute") %>%
+  calculate(stat = "Chisq")
+
+null_distribution %>%
+  visualize() +
+  shade_p_value(obs_stat = observed_stat, direction = "greater")
+
+p_value_tbl <- null_distribution %>%
+  get_p_value(obs_stat = observed_stat, direction = "greater")
+
+p_value_tbl   
+
+p_value <- p_value_tbl$p_value  
+
+# Test conclusion
+if (p_value < alpha) {
+  conclusion <- "We reject H0: there is evidence that there is strong relationship between income level and fertility rate in Mongolia."
+} else {
+  conclusion <- "We fail to reject H0: there is not enough evidence that there is strong relationship between income level and fertility rate in Mongolia."
+}
+
+conclusion
+
+```
+
+
+## Hong Kong
+
+```{r, message=FALSE, warning=FALSE,results='hide'}
+
+# ----- PREPARE WORLD DATASET FOR TEST 3 ------
+
+world_data <- world_data %>%
+  mutate(
+    fertility_group = case_when(
+      babies_per_woman < 1.3 ~ "<1.3",
+      babies_per_woman >= 1.3 & babies_per_woman < 2.1 ~ "1.3–<2.1",
+      babies_per_woman >= 2.1 & babies_per_woman < 3.0 ~ "2.1–<3.0",
+      babies_per_woman >= 3.0 & babies_per_woman < 4.5 ~ "3.0–<4.5",
+      babies_per_woman >= 4.5 ~ ">=4.5",
+      TRUE ~ NA_character_
+    )
+  )
+
+HK_test_3 <- world_data %>%
+  select(country, year, fertility_group, income_level) %>%
+  filter(year >= 1900, year <= 2025) %>%
+  filter(!is.na(fertility_group)) %>%
+  filter(!is.na(income_level)) %>%
+  distinct() %>%
+  filter(country == "Hong Kong, China")
+
+sum(is.na(HK_test_3$fertility_group))
+sum(is.na(HK_test_3$income_level))
+sum(duplicated(HK_test_3))
+
+```
+
+
+```{r, message=FALSE, warning=FALSE}
+
+library(ggplot2)
+
+ggplot(HK_test_3, aes(x = fertility_group, fill = income_level)) +
+  geom_bar(position = "fill", color = "black") +
+  labs(
+    title = "Income Distribution by Fertility Groups in Hong Kong (1900–2025)",
+    subtitle = "Proportions of income levels across fertility groups",
+    x = "Fertility Group",
+    y = "Proportion",
+    fill = "Income Level"
+  ) +
+  scale_y_continuous(labels = scales::percent) +
+  scale_fill_brewer(palette = "Paired") +
+  theme_minimal(base_size = 14) +
+  theme(
+    # Title
+    plot.title = element_text(
+      size = 12,
+      face = "bold",
+      hjust = 0.5
+    ),
+    plot.subtitle = element_text(
+      size = 11,
+      hjust = 0.5
+    ),
+    
+    # Axis titles
+    axis.title.x = element_text(
+      size = 11,
+      face = "bold"
+    ),
+    axis.title.y = element_text(
+      size = 11,
+      face = "bold"
+    ),
+    
+    # Axis text
+    axis.text.x = element_text(size = 11),
+    axis.text.y = element_text(size = 11),
+    
+    # Legend
+    legend.title = element_text(size = 11, face = "bold"),
+    legend.text = element_text(size = 10)
+  )
+
+```
+
+The bar chart for Hong Kong shows a strong domination of higher income levels in the lowest fertility group (<1.3). As fertility increases, the income distribution shifts toward middle and lower income categories, with the highest fertility group displaying a strong concentration of income level 1.
+
+This pattern indicates a clear relationship between income level and fertility in Hong Kong, where higher income is associated with lower birth rates. The  differences in distribution of income levels across fertility groups suggest that income level and fertility are not independent, motivating a formal test of chi-square test of independence.
+
+H~0~: There is no relationship between income level and fertility rate in Hong Kong.
+
+H~A~: There is strong relationship between income level and fertility rate in Hong Kong.
+
+Significance level: 5%
+
+Test: Right-tail test
+
+```{r, message=FALSE, warning=FALSE,results='hide'}
+
+library(infer)
+library(DT)
+library(tidyverse)
+
+# Specify the null hypothesis
+null_hypothesis <- HK_test_3 %>%
+  specify(income_level ~ fertility_group) %>%
+  hypothesize(null = "independence")
+
+alpha <- 0.05
+
+```
+
+```{r, message=FALSE, warning=FALSE}
+
+(observed_stat <- HK_test_3 %>%
+  specify(income_level ~ fertility_group) %>%
+  calculate(stat = "Chisq"))
+
+```
+
+
+```{r, message=FALSE, warning=FALSE}
+
+null_distribution <- null_hypothesis %>%
+  generate(reps = 10000, type = "permute") %>%
+  calculate(stat = "Chisq")
+
+null_distribution %>%
+  visualize() +
+  shade_p_value(obs_stat = observed_stat, direction = "greater")
+
+p_value_tbl <- null_distribution %>%
+  get_p_value(obs_stat = observed_stat, direction = "greater")
+
+p_value_tbl   
+
+p_value <- p_value_tbl$p_value  
+
+# Test conclusion
+if (p_value < alpha) {
+  conclusion <- "We reject H0: there is evidence that there is strong relationship between income level and fertility rate in Hong Kong."
+} else {
+  conclusion <- "We fail to reject H0: there is not enough evidence that there is strong relationship between income level and fertility rate in Hong Kong."
+}
+
+conclusion
+
+```
+
+
+## East Asia
+
+```{r, message=FALSE, warning=FALSE, results='hide'}
+
+library(tidyverse)
+
+world_data <- world_data %>%
+  mutate(
+    fertility_group = case_when(
+      babies_per_woman < 1.3 ~ "<1.3",
+      babies_per_woman >= 1.3 & babies_per_woman < 2.1 ~ "1.3–<2.1",
+      babies_per_woman >= 2.1 & babies_per_woman < 3.0 ~ "2.1–<3.0",
+      babies_per_woman >= 3.0 & babies_per_woman < 4.5 ~ "3.0–<4.5",
+      babies_per_woman >= 4.5 ~ ">=4.5",
+      TRUE ~ NA_character_
+    )
+  )
+
+EA_test_3 <- world_data %>%
+  select(country, year, fertility_group, income_level) %>%
+  filter(year >= 1900, year <= 2025) %>%
+  filter(!is.na(fertility_group)) %>%
+  filter(!is.na(income_level)) %>%
+  distinct() %>%
+  filter(country %in% c("China", "South Korea", "Japan", "Mongolia", "Hong Kong, China"))
+
+sum(is.na(EA_test_3$fertility_group))
+sum(is.na(EA_test_3$income_level))
+sum(duplicated(EA_test_3))
+
+```
+
+
+```{r, message=FALSE, warning=FALSE}
+
+library(ggplot2)
+
+ggplot(EA_test_3, aes(x = fertility_group, fill = income_level)) +
+  geom_bar(position = "fill", color = "black") +
+  labs(
+    title = "Income Distribution by Fertility Groups in East Asia (1900–2025)",
+    subtitle = "Proportions of income levels across fertility groups",
+    x = "Fertility Group",
+    y = "Proportion",
+    fill = "Income Level"
+  ) +
+  scale_y_continuous(labels = scales::percent) +
+  scale_fill_brewer(palette = "Paired") +
+  theme_minimal(base_size = 14) +
+  theme(
+    # Title
+    plot.title = element_text(
+      size = 12,
+      face = "bold",
+      hjust = 0.5
+    ),
+    plot.subtitle = element_text(
+      size = 11,
+      hjust = 0.5
+    ),
+    
+    # Axis titles
+    axis.title.x = element_text(
+      size = 11,
+      face = "bold"
+    ),
+    axis.title.y = element_text(
+      size = 11,
+      face = "bold"
+    ),
+    
+    # Axis text
+    axis.text.x = element_text(size = 11),
+    axis.text.y = element_text(size = 11),
+    
+    # Legend
+    legend.title = element_text(size = 11, face = "bold"),
+    legend.text = element_text(size = 10)
+  )
+
+```
+
+When pooling all five East Asian economies, the bar chart reveals an overall relationship between income level and fertility group. The lowest fertility group (<1.3) is dominated by the highest income levels (level 3 and 4), while intermediate fertility groups (2.1-<3.0 and 3.0-<4.5) show a greater concentration in middle income levels. In contrast, the highest fertility group are largely composed of lower income categories.
+
+Overall, the East Asia results suggest an association between income level and fertility across the region. This visual evidence supports the hypothesis that fertility group and income level are not independent, providing strong motivation for a formal chi-square test of independence. 
+
+H~0~: There is no relationship between income level and fertility rate in East Asia.
+
+H~A~: There is strong relationship between income level and fertility rate in East Asia.
+
+Significance level: 5%
+
+Test: Right-tail test
+
+```{r, message=FALSE, warning=FALSE,results='hide'}
+
+library(infer)
+library(DT)
+library(tidyverse)
+
+# Specify the null hypothesis
+null_hypothesis <- EA_test_3 %>%
+  specify(income_level ~ fertility_group) %>%
+  hypothesize(null = "independence")
+
+alpha <- 0.05
+
+```
+
+```{r, message=FALSE, warning=FALSE}
+
+(observed_stat <- EA_test_3 %>%
+  specify(income_level ~ fertility_group) %>%
+  calculate(stat = "Chisq"))
+
+```
+
+
+```{r, message=FALSE, warning=FALSE}
+
+null_distribution <- null_hypothesis %>%
+  generate(reps = 10000, type = "permute") %>%
+  calculate(stat = "Chisq")
+
+null_distribution %>%
+  visualize() +
+  shade_p_value(obs_stat = observed_stat, direction = "greater")
+
+p_value_tbl <- null_distribution %>%
+  get_p_value(obs_stat = observed_stat, direction = "greater")
+
+p_value_tbl   
+
+p_value <- p_value_tbl$p_value  
+
+# Test conclusion
+if (p_value < alpha) {
+  conclusion <- "We reject H0: there is evidence that there is strong relationship between income level and fertility rate in East Asia."
+} else {
+  conclusion <- "We fail to reject H0: there is not enough evidence that there is strong relationship between income level and fertility rate in East Asia."
+}
+
+conclusion
+
+```
+
+
+# 4 HYPOTHESIS TEST FOR DEPENDENCE BETWEEN A NUMERICAL AND A CATEGORICAL VARIABLE
+
+## China 
+
+```{r, message=FALSE, warning=FALSE,results='hide'}
+
+# ----- PREPARE WORLD DATASET FOR TEST 4 ------
+
+China_test_4 <- world_data %>%
+  select(country, year, life_expectancy_at_birth, income_level) %>%
+  filter(year >= 1900, year <= 2025) %>%
+  filter(!is.na(life_expectancy_at_birth)) %>%
+  filter(!is.na(income_level)) %>%
+  distinct() %>%
+  filter(country == "China")
+
+sum(is.na(China_test_4$life_expectancy_at_birth))
+sum(is.na(China_test_4$income_level))
+sum(duplicated(China_test_4))
+
+China_test_4
+
+```
+
+```{r, message=FALSE, warning=FALSE}
+
+library(dplyr)
+library(ggplot2)
+
+ggplot(China_test_4, aes(x = income_level, y = life_expectancy_at_birth)) +
+  geom_boxplot(width = 0.65, outlier.alpha = 0.4) +
+  stat_summary(fun = mean, geom = "point", size = 2.8, color = "red") +     
+  stat_summary(fun = mean, geom = "crossbar", width = 0.5, color = "red") + 
+  labs(
+    title = "Life Expectancy at Birth by Income Level in China (1900-2025)",
+    x = "Income Level",
+    y = "Life expectancy at birth"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 12, face = "bold", hjust = 0.5),
+    axis.title.x = element_text(size = 12, face = "bold"),
+    axis.title.y = element_text(size = 12, face = "bold"),
+    axis.text.x  = element_text(size = 12),
+    axis.text.y  = element_text(size = 12)
+  )
+```
+
+China’s box plot indicates a clear increase in mean life expectancy as income level rises. Income level 1 has the lowest mean and the greatest variability, while levels 2 and 3 show substantially higher and more tightly clustered LEAB values. The increase from level 1 to level 2 is large, whereas the change from level 2 to level 3 is smaller, consistent with diminishing returns at higher income levels.
+
+Overall, the separation between group means suggests that mean LEAB differs across income levels, motivating ANOVA to test the statistical significance of these mean differences.
+
+H~0~: Mean LEAB is the same across all income levels
+
+H~A~: At least one group mean differs. (Mean LEAB is not equal across income groups)
+
+Significance level: 5%
+
+Test: Right-tail test
+
+```{r, message=FALSE, warning=FALSE}
+
+# Load necessary libraries
+library(infer)
+library(DT)
+library(tidyverse)
+
+
+# Specify the null hypothesis
+null_hypothesis <- China_test_4 %>%
+  specify(life_expectancy_at_birth ~ income_level) %>%
+  hypothesize(null = "independence")
+
+alpha <- 0.05
+
+```
+
+```{r, message=FALSE, warning=FALSE}
+
+(observed_stat <- China_test_4 %>%
+    specify(life_expectancy_at_birth ~ income_level)  %>%
+    calculate(stat = "F"))
+
+```
+
+```{r, message=FALSE, warning=FALSE}
+
+null_distribution <- null_hypothesis %>%
+  generate(reps = 1000, type = "permute") %>%
+  calculate(stat = "F")
+null_distribution
+
+null_distribution %>%
+  visualize() +
+  shade_p_value(obs_stat = observed_stat, direction = "greater")
+
+p_value_tbl <- null_distribution %>%
+  get_p_value(obs_stat = observed_stat, direction = "greater")
+
+p_value_tbl   
+
+
+
+# Test conclusion
+if (p_value < alpha) {
+  conclusion <- "Reject the null hypothesis: There is a significant difference in the means of life expectancy at birth with income levels in China."
+} else {
+  conclusion <- "Fail to reject the null hypothesis: There is not enough evidence to conclude that there is a significant difference in the means of life expectancy at birth with income levels in China."
+}
+
+conclusion
+
+```
+
+## Japan
+
+```{r, message=FALSE, warning=FALSE,results='hide'}
+
+# ----- PREPARE WORLD DATASET FOR TEST 4 ------
+
+Japan_test_4 <- world_data %>%
+  select(country, year, life_expectancy_at_birth, income_level) %>%
+  filter(year >= 1900, year <= 2025) %>%
+  filter(!is.na(life_expectancy_at_birth)) %>%
+  filter(!is.na(income_level)) %>%
+  distinct() %>%
+  filter(country == "Japan")
+
+sum(is.na(Japan_test_4$life_expectancy_at_birth))
+sum(is.na(Japan_test_4$income_level))
+sum(duplicated(Japan_test_4))
+
+Japan_test_4
+
+```
+
+```{r, message=FALSE, warning=FALSE}
+
+library(dplyr)
+library(ggplot2)
+
+ggplot(Japan_test_4, aes(x = income_level, y = life_expectancy_at_birth)) +
+  geom_boxplot(width = 0.65, outlier.alpha = 0.4) +
+  stat_summary(fun = mean, geom = "point", size = 2.8, color = "red") +     
+  stat_summary(fun = mean, geom = "crossbar", width = 0.5, color = "red") + 
+  labs(
+    title = "Life Expectancy at Birth by Income Level in Japan (1900-2025)",
+    x = "Income Level",
+    y = "Life expectancy at birth"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 12, face = "bold", hjust = 0.5),
+    axis.title.x = element_text(size = 12, face = "bold"),
+    axis.title.y = element_text(size = 12, face = "bold"),
+    axis.text.x  = element_text(size = 12),
+    axis.text.y  = element_text(size = 12)
+  )
+```
+
+The Japan box plot shows a strong upward shift in mean life expectancy at birth as income level increases. Income level 2 has the lowest mean LEAB and the widest spread, while levels 3 and 4 show substantially higher means with much tighter distributions. The increase from level 2 to level 3 is large, whereas the increase from level 3 to level 4 is smaller, suggesting possible diminishing returns at higher income levels.
+
+Overall, the clear separation in group means provides strong visual evidence that mean LEAB differs across income levels, supporting the use of ANOVA to test whether these mean differences are statistically significant.
+
+H~0~: Mean LEAB is the same across all income levels
+
+H~A~: At least one group mean differs. (Mean LEAB is not equal across income groups)
+
+Significance level: 5%
+
+Test: Right-tail test
+
+```{r, message=FALSE, warning=FALSE}
+
+# Load necessary libraries
+library(infer)
+library(DT)
+library(tidyverse)
+
+
+# Specify the null hypothesis
+null_hypothesis <- Japan_test_4 %>%
+  specify(life_expectancy_at_birth ~ income_level) %>%
+  hypothesize(null = "independence")
+
+alpha <- 0.05
+
+```
+
+```{r, message=FALSE, warning=FALSE}
+
+(observed_stat <- Japan_test_4 %>%
+    specify(life_expectancy_at_birth ~ income_level)  %>%
+    calculate(stat = "F"))
+
+```
+
+```{r, message=FALSE, warning=FALSE}
+
+null_distribution <- null_hypothesis %>%
+  generate(reps = 1000, type = "permute") %>%
+  calculate(stat = "F")
+null_distribution
+
+null_distribution %>%
+  visualize() +
+  shade_p_value(obs_stat = observed_stat, direction = "greater")
+
+p_value_tbl <- null_distribution %>%
+  get_p_value(obs_stat = observed_stat, direction = "greater")
+
+p_value_tbl   
+
+
+
+# Test conclusion
+if (p_value < alpha) {
+  conclusion <- "Reject the null hypothesis: There is a significant difference in the means of life expectancy at birth with income levels in Japan."
+} else {
+  conclusion <- "Fail to reject the null hypothesis: There is not enough evidence to conclude that there is a significant difference in the means of life expectancy at birth with income levels in Japan."
+}
+
+conclusion
+
+```
+
+
+## Mongolia
+
+```{r, message=FALSE, warning=FALSE,results='hide'}
+
+# ----- PREPARE WORLD DATASET FOR TEST 4 ------
+
+Mongolia_test_4 <- world_data %>%
+  select(country, year, life_expectancy_at_birth, income_level) %>%
+  filter(year >= 1900, year <= 2025) %>%
+  filter(!is.na(life_expectancy_at_birth)) %>%
+  filter(!is.na(income_level)) %>%
+  distinct() %>%
+  filter(country == "Mongolia")
+
+sum(is.na(Mongolia_test_4$life_expectancy_at_birth))
+sum(is.na(Mongolia_test_4$income_level))
+sum(duplicated(Mongolia_test_4))
+
+Mongolia_test_4
+
+```
+
+```{r, message=FALSE, warning=FALSE}
+
+library(dplyr)
+library(ggplot2)
+
+ggplot(Mongolia_test_4, aes(x = income_level, y = life_expectancy_at_birth)) +
+  geom_boxplot(width = 0.65, outlier.alpha = 0.4) +
+  stat_summary(fun = mean, geom = "point", size = 2.8, color = "red") +     
+  stat_summary(fun = mean, geom = "crossbar", width = 0.5, color = "red") + 
+  labs(
+    title = "Life Expectancy at Birth by Income Level in Mongolia (1900-2025)",
+    x = "Income Level",
+    y = "Life expectancy at birth"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 12, face = "bold", hjust = 0.5),
+    axis.title.x = element_text(size = 12, face = "bold"),
+    axis.title.y = element_text(size = 12, face = "bold"),
+    axis.text.x  = element_text(size = 12),
+    axis.text.y  = element_text(size = 12)
+  )
+```
+
+For Mongolia, mean life expectancy rises significantly across income levels, with level 1 showing the lowest mean and the greatest dispersion, including several higher-value outliers. Level 2 has a much higher mean LEAB than level 1 and remains relatively variable, while level 3 shows the highest mean and the most concentrated distribution.
+
+Overall, the upward pattern in means across income levels suggests a positive association between income level and LEAB, motivating ANOVA to formally test whether group mean differences are statistically significant.
+
+H~0~: Mean LEAB is the same across all income levels
+
+H~A~: At least one group mean differs. (Mean LEAB is not equal across income groups)
+
+Significance level: 5%
+
+Test: Right-tail test
+
+```{r, message=FALSE, warning=FALSE}
+
+# Load necessary libraries
+library(infer)
+library(DT)
+library(tidyverse)
+
+
+# Specify the null hypothesis
+null_hypothesis <- Mongolia_test_4 %>%
+  specify(life_expectancy_at_birth ~ income_level) %>%
+  hypothesize(null = "independence")
+
+alpha <- 0.05
+
+```
+
+```{r, message=FALSE, warning=FALSE}
+
+(observed_stat <- Mongolia_test_4 %>%
+    specify(life_expectancy_at_birth ~ income_level)  %>%
+    calculate(stat = "F"))
+
+```
+
+```{r, message=FALSE, warning=FALSE}
+
+null_distribution <- null_hypothesis %>%
+  generate(reps = 1000, type = "permute") %>%
+  calculate(stat = "F")
+null_distribution
+
+null_distribution %>%
+  visualize() +
+  shade_p_value(obs_stat = observed_stat, direction = "greater")
+
+p_value_tbl <- null_distribution %>%
+  get_p_value(obs_stat = observed_stat, direction = "greater")
+
+p_value_tbl   
+
+
+
+# Test conclusion
+if (p_value < alpha) {
+  conclusion <- "Reject the null hypothesis: There is a significant difference in the means of life expectancy at birth with income levels in Mongolia."
+} else {
+  conclusion <- "Fail to reject the null hypothesis: There is not enough evidence to conclude that there is a significant difference in the means of life expectancy at birth with income levels in Mongolia."
+}
+
+conclusion
+
+```
+
+## Hong Kong
+
+```{r, message=FALSE, warning=FALSE,results='hide'}
+
+# ----- PREPARE WORLD DATASET FOR TEST 4 ------
+
+HK_test_4 <- world_data %>%
+  select(country, year, life_expectancy_at_birth, income_level) %>%
+  filter(year >= 1900, year <= 2025) %>%
+  filter(!is.na(life_expectancy_at_birth)) %>%
+  filter(!is.na(income_level)) %>%
+  distinct() %>%
+  filter(country == "Hong Kong, China")
+
+sum(is.na(HK_test_4$life_expectancy_at_birth))
+sum(is.na(HK_test_4$income_level))
+sum(duplicated(HK_test_4))
+
+HK_test_4
+
+```
+
+```{r, message=FALSE, warning=FALSE}
+
+library(dplyr)
+library(ggplot2)
+
+ggplot(HK_test_4, aes(x = income_level, y = life_expectancy_at_birth)) +
+  geom_boxplot(width = 0.65, outlier.alpha = 0.4) +
+  stat_summary(fun = mean, geom = "point", size = 2.8, color = "red") +     
+  stat_summary(fun = mean, geom = "crossbar", width = 0.5, color = "red") + 
+  labs(
+    title = "Life Expectancy at Birth by Income Level in Hong Kong (1900-2025)",
+    x = "Income Level",
+    y = "Life expectancy at birth"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 12, face = "bold", hjust = 0.5),
+    axis.title.x = element_text(size = 12, face = "bold"),
+    axis.title.y = element_text(size = 12, face = "bold"),
+    axis.text.x  = element_text(size = 12),
+    axis.text.y  = element_text(size = 12)
+  )
+```
+
+In Hong Kong, the distributions shift upward from income level 2 to level 3 and again to level 4, with higher income levels generally associated with higher LEAB and reduced variability. However, the level 4 group includes an extreme low outlier (near 0), which pulls the mean downward relative to the median and the rest of the distribution.
+
+Despite this outlier, the visible upward shift in central tendency from level 2 to levels 3–4 suggests that mean LEAB differs across income levels, supporting an ANOVA test to evaluate whether these differences are statistically significant.
+
+H~0~: Mean LEAB is the same across all income levels
+
+H~A~: At least one group mean differs. (Mean LEAB is not equal across income groups)
+
+Significance level: 5%
+
+Test: Right-tail test
+
+```{r, message=FALSE, warning=FALSE}
+
+# Load necessary libraries
+library(infer)
+library(DT)
+library(tidyverse)
+
+
+# Specify the null hypothesis
+null_hypothesis <- HK_test_4 %>%
+  specify(life_expectancy_at_birth ~ income_level) %>%
+  hypothesize(null = "independence")
+
+alpha <- 0.05
+
+```
+
+```{r, message=FALSE, warning=FALSE}
+
+(observed_stat <- HK_test_4 %>%
+    specify(life_expectancy_at_birth ~ income_level)  %>%
+    calculate(stat = "F"))
+
+```
+
+```{r, message=FALSE, warning=FALSE}
+
+null_distribution <- null_hypothesis %>%
+  generate(reps = 1000, type = "permute") %>%
+  calculate(stat = "F")
+null_distribution
+
+null_distribution %>%
+  visualize() +
+  shade_p_value(obs_stat = observed_stat, direction = "greater")
+
+p_value_tbl <- null_distribution %>%
+  get_p_value(obs_stat = observed_stat, direction = "greater")
+
+p_value_tbl   
+
+
+
+# Test conclusion
+if (p_value < alpha) {
+  conclusion <- "Reject the null hypothesis: There is a significant difference in the means of life expectancy at birth with income levels in Hong Kong."
+} else {
+  conclusion <- "Fail to reject the null hypothesis: There is not enough evidence to conclude that there is a significant difference in the means of life expectancy at birth with income levels in Hong Kong."
+}
+
+conclusion
+
+```
+
+## East Asia
+
+```{r, message=FALSE, warning=FALSE,results='hide'}
+
+# ----- PREPARE WORLD DATASET FOR TEST 4 ------
+
+EA_test_4 <- world_data %>%
+  select(country, year, life_expectancy_at_birth, income_level) %>%
+  filter(year >= 1900, year <= 2025) %>%
+  filter(!is.na(life_expectancy_at_birth)) %>%
+  filter(!is.na(income_level)) %>%
+  distinct() %>%
+  filter(country %in% c("China", "South Korea", "Japan", "Mongolia", "Hong Kong, China"))
+
+sum(is.na(EA_test_4$life_expectancy_at_birth))
+sum(is.na(EA_test_4$income_level))
+sum(duplicated(EA_test_4))
+
+EA_test_4
+
+```
+
+```{r, message=FALSE, warning=FALSE}
+
+library(dplyr)
+library(ggplot2)
+
+ggplot(EA_test_4, aes(x = income_level, y = life_expectancy_at_birth)) +
+  geom_boxplot(width = 0.65, outlier.alpha = 0.4) +
+  stat_summary(fun = mean, geom = "point", size = 2.8, color = "red") +     
+  stat_summary(fun = mean, geom = "crossbar", width = 0.5, color = "red") + 
+  labs(
+    title = "Life Expectancy at Birth by Income Level in East Asia (1900-2025)",
+    x = "Income Level",
+    y = "Life expectancy at birth"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 12, face = "bold", hjust = 0.5),
+    axis.title.x = element_text(size = 12, face = "bold"),
+    axis.title.y = element_text(size = 12, face = "bold"),
+    axis.text.x  = element_text(size = 12),
+    axis.text.y  = element_text(size = 12)
+  )
+```
+
+The East Asia plot shows a strong increase in mean life expectancy from income level 1 through level 4. Lower income levels exhibit lower means and greater spread, while higher income levels show higher means and tighter distributions. There is a very low outlier in the highest income level that can affect the mean.
+
+Overall, the clear upward shift in mean LEAB across income levels provides strong visual evidence of differences in group means, supporting a formal ANOVA test to assess whether these mean differences are statistically significant.
+
+H~0~: Mean LEAB is the same across all income levels
+
+H~A~: At least one group mean differs. (Mean LEAB is not equal across income groups)
+
+Significance level: 5%
+
+Test: Right-tail test
+
+```{r, message=FALSE, warning=FALSE}
+
+# Load necessary libraries
+library(infer)
+library(DT)
+library(tidyverse)
+
+
+# Specify the null hypothesis
+null_hypothesis <- EA_test_4 %>%
+  specify(life_expectancy_at_birth ~ income_level) %>%
+  hypothesize(null = "independence")
+
+alpha <- 0.05
+
+```
+
+```{r, message=FALSE, warning=FALSE}
+
+(observed_stat <- EA_test_4 %>%
+    specify(life_expectancy_at_birth ~ income_level)  %>%
+    calculate(stat = "F"))
+
+```
+
+```{r, message=FALSE, warning=FALSE}
+
+null_distribution <- null_hypothesis %>%
+  generate(reps = 1000, type = "permute") %>%
+  calculate(stat = "F")
+null_distribution
+
+null_distribution %>%
+  visualize() +
+  shade_p_value(obs_stat = observed_stat, direction = "greater")
+
+p_value_tbl <- null_distribution %>%
+  get_p_value(obs_stat = observed_stat, direction = "greater")
+
+p_value_tbl   
+
+
+
+# Test conclusion
+if (p_value < alpha) {
+  conclusion <- "Reject the null hypothesis: There is a significant difference in the means of life expectancy at birth with income levels in East Asia."
+} else {
+  conclusion <- "Fail to reject the null hypothesis: There is not enough evidence to conclude that there is a significant difference in the means of life expectancy at birth with income levels in East Asia."
+}
+
+conclusion
+
+```
